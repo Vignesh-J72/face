@@ -1,11 +1,6 @@
 import datetime
-from deepface import DeepFace
 import cv2
-import os
-
-import cv2
-from deepface import DeepFace
-import time
+from deepface import DeepFace 
 
 DB_PATH = "dataset/"         
 MODEL_NAME = "ArcFace"        
