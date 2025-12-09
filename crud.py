@@ -23,9 +23,17 @@ def create_data():
            profile_res=read_data(path)
            print(profile_res)
            ref1=db.reference('Users/'+path)
+           user_data=ref1.get()
            while True:
-               None  
-
+               print("Available data:", user_data)
+               user_choice=input("Enter the key to add data:")
+               user_value=input("Enter the value:")
+               ref1.update({user_choice:user_value})
+               print("Data added successfully")
+               choice=input("Do you want to add more data? (y/n): ")
+               if choice.lower()!='y':
+                   break
+    return
 
 def read_data(profile_name=None):
     if profile_name==None:
@@ -39,13 +47,14 @@ def read_data(profile_name=None):
         print(ref.get())
         attn=db.reference('Attendance/'+profile_name)
         print(attn.get())
-    return None
+    return
 
 def update_data():
-    path=input("Enter profile name to update data: ")
+    path=input("Enter profile name to update data: ").lower()
     choice=input("1. Update user data\n2. Update attendance data\nEnter your choice:(1/2)")
-    res1=db.reference('Users/'+path)
+    res1=db.reference('Users/')
     res11=res1.get()
+    print(res11)
     if path not in res11:
         print("Profile does not exist.")
         return
@@ -61,11 +70,10 @@ def update_data():
         ref=db.reference('Attendance/'+path)
         date=input("Enter date to update attendance (DD-MM-YYYY):")
         status=input("Enter new status (Present/Absent):")
-        ref.update({
-            date:status
-        })
+        ref=db.reference('Attendance/'+path+'/'+date)
+        ref.update({"Status":status})
         print("Attendance updated successfully.")
-    
+    return
 
 def delete_data():
     path=input("Enter profile name to delete data: ")
@@ -73,18 +81,20 @@ def delete_data():
     res1=db.reference('Users/'+path)
     res11=res1.get()
     print(res11)
-    if path not in res11:
-        print("Profile does not exist.")
-        return
     if choice=='1':
         ref=db.reference('Users/'+path)
-        ref.delete()
+        print(ref.get())
+        choice=input("Enter the key to delete:")
+        ref1=ref.child(choice)
+        ref1.delete()
         print("User data deleted successfully.")
     elif choice=='2':
         ref=db.reference('Attendance/'+path)
-        ref.delete()
+        choice=input("Enter date to delete attendance (DD-MM-YYYY):")
+        ref1=ref.child(choice)
+        ref1.delete()
         print("Attendance data deleted successfully.")
-
+    return
 
 
         
@@ -103,7 +113,8 @@ if __name__ == "__main__":
         if choice == '1':
             create_data()
         elif choice == '2':
-            read_data()
+            Username=input("Enter profile name to read data (leave blank to read all):").lower()
+            read_data(Username)
         elif choice == '3':
             update_data()
         elif choice == '4':
