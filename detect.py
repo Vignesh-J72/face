@@ -90,9 +90,9 @@ while True:
     cv2.putText(frame, last_identity, (30,40),
                 cv2.FONT_HERSHEY_SIMPLEX, 1, (0,255,0),2)
     cv2.imshow("Face Scanner", frame)
-    if last_identity!="No Face" and last_identity!="Unknown":
-        print(f"Identified: {last_identity} at {datetime.datetime.now()}")
-        add_attendance(last_identity)
+    if last_identity!="No Face" and last_identity!="Unknown" and last_identity!=None and last_identity!="none":
+       print(f"identified:{last_identity} at {datetime.datetime.now().strftime('%H:%M:%S')}")
+       add_attendance(last_identity)
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break
 cap.release()
