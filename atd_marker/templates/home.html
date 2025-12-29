@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body {
+            display: flex;
+            height: 100vh;
+            font-family: Arial;
+        }
+        #left {
+            width: 40%;
+            padding: 20px;
+            background: #f4f4f4;
+        }
+        #right {
+            width: 60%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: black;
+        }
+        img {
+            max-width: 100%;
+            border: 2px solid #333;
+        }
+        pre {
+            background: black;
+            color: lime;
+            padding: 10px;
+            height: 200px;
+            overflow: auto;
+        }
+    </style>
+</head>
+
+<body>
+
+<div id="left">
+    <button onclick="startDetect()">Start Detection</button>
+    <button onclick="stopDetect()">Stop Detection</button>
+    <button onclick="location.href='database.html'">Get Attendance</button>
+
+    <p>Status: <b id="status">Idle</b></p>
+    <p>Last Identity: <b id="identity">None</b></p>
+
+    <h3>Logs</h3>
+    <pre id="logs"></pre>
+    <p>
+    </p>
+</div>
+
+<div id="right">
+    <img src="/video/" />
+</div>
+
+<script>
+    let confirm_shown=false;
+function startDetect() {
+    fetch("/detect/");
+    
+}
+
+function stopDetect() {
+    fetch("/stop/");
+}
+
+function pollStatus() {
+    fetch("/status/")
+        .then(r => r.json())
+        .then(d => {
+            document.getElementById("status").innerText = d.status;
+            document.getElementById("identity").innerText = d.last_detected;
+            document.getElementById("logs").innerText = d.logs.join("\n");
+            if (d.confirm_needed && !confirm_shown){
+                confirm_shown=true;
+                const confirmation=confirm('Clockout?');
+                fetch('/confirmation',{
+                    method:'POST',
+                    headers:{
+                        'Content-Type':'application/json',
+                        'X-CSRFToken':getCookie('csrftoken')
+                    },
+                    body:JSON.stringify({
+                        name:d.confirm_name,
+                        response:confirmation?'Affirmative':'Negative'
+                    })
+                });
+
+            }
+            if (!d.confirm_needed){
+                confirm_shown=false;
+            }
+        })
+    }
+
+setInterval(pollStatus, 1000);
+</script>
+
+</body>
+</html>

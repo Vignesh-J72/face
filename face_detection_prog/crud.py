@@ -96,9 +96,7 @@ def delete_data():
         print("Attendance data deleted successfully.")
     return
 
-
-        
-if __name__ == "__main__":
+def menu():
     cred=credentials.Certificate("firebase_key.json")
     firebase_admin.initialize_app(cred,{
     'databaseURL':'https://first-project-c1f7b-default-rtdb.asia-southeast1.firebasedatabase.app/'})
@@ -123,3 +121,6 @@ if __name__ == "__main__":
             break
         else:
             print("Invalid choice. Please try again.") 
+        
+if __name__ == "__main__":
+    menu()
