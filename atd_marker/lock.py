@@ -12,4 +12,5 @@ current_frame=None
 confirm_needed=False
 confirm_shown=False
 confirm_name=None
-confirm_given=False
+confirm_given=None
+confirm_active=False

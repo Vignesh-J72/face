@@ -6,11 +6,12 @@
             display: flex;
             height: 100vh;
             font-family: Arial;
+            background-color: grey;
         }
         #left {
             width: 40%;
             padding: 20px;
-            background: #f4f4f4;
+            background:lightgray;
         }
         #right {
             width: 60%;
@@ -30,15 +31,37 @@
             height: 200px;
             overflow: auto;
         }
+        .detect-btn{
+         background-color:lightgreen;
+         border:none;
+         padding:15px;
+         cursor:pointer;
+
+        }
+        .attend-btn{
+  background-color:powderblue;
+  border:none;
+  padding:15px;
+  cursor:pointer;
+
+}
+.stop-btn{
+  background-color: rgb(243, 6, 46);
+  border:none;
+  padding:15px;
+  cursor:pointer;
+
+}
     </style>
 </head>
 
 <body>
 
 <div id="left">
-    <button onclick="startDetect()">Start Detection</button>
-    <button onclick="stopDetect()">Stop Detection</button>
-    <button onclick="location.href='database.html'">Get Attendance</button>
+    <button class="detect-btn" onclick="startDetect()">Start Detection</button>
+    <button class="stop-btn" onclick="stopDetect()">Stop Detection</button>
+    <button class="attend-btn" onclick="location.href='{% url 'database' %}'">Get Attendance</button>
+
 
     <p>Status: <b id="status">Idle</b></p>
     <p>Last Identity: <b id="identity">None</b></p>
@@ -69,7 +92,7 @@ function pollStatus() {
         .then(r => r.json())
         .then(d => {
             document.getElementById("status").innerText = d.status;
-            document.getElementById("identity").innerText = d.last_detected;
+            document.getElementById("identity").innerText = d.last_identity;
             document.getElementById("logs").innerText = d.logs.join("\n");
             if (d.confirm_needed && !confirm_shown){
                 confirm_shown=true;
@@ -82,7 +105,7 @@ function pollStatus() {
                     },
                     body:JSON.stringify({
                         name:d.confirm_name,
-                        response:confirmation?'Affirmative':'Negative'
+                        response:confirmation
                     })
                 });
 

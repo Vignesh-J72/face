@@ -5,51 +5,72 @@ import firebase_admin
 from firebase_admin import db,credentials
 import os
 from atd_marker import lock
-
 def add_attendance(name):
-    cur_date=datetime.datetime.now().strftime("%d-%m-%Y")
-    print("name",name)
-    reference_profile=db.reference('Attendance/'+name.lower())
-    print(name.lower())
-    result=reference_profile.get()
-    print(result)
-        
-    if cur_date in result:
-        lock.logs.append(f"Attendance has already been saved for today ({cur_date})")
-        lock.logs.append("Would you like to log the clock out time? (y/n)")
-        lock.confirm_needed=True
-        lock.confirm_name=name
-        lock.confirm_given=None
-        while lock.confirm_given is None:
-            time.sleep(0.1)
-        
+    print("ACTIVE:", lock.confirm_active, "GIVEN:", lock.confirm_given)
+    cur_date = datetime.datetime.now().strftime("%d-%m-%Y")
+    reference_profile = db.reference('Attendance/' + name.lower())
+    result = reference_profile.get() or {}
 
-        
-        if lock.confirm_given is True:
-            reference_profile=db.reference('Attendance/'+name.lower()+'/'+cur_date)
-            reference_profile.update({
-                "Clocked out at":datetime.datetime.now().strftime("%H:%M:%S")
-            })
-            lock.logs.append(f"Clock out time logged for {name} at {datetime.datetime.now().strftime('%H:%M:%S')}")
-            clock_in=datetime.datetime.strptime(db.reference('Attendance/'+name.lower()+'/'+cur_date+"/Clocked in at").get(),"%H:%M:%S")
-            
-            clock_out=datetime.datetime.strptime(db.reference('Attendance/'+name.lower()+'/'+cur_date+"/Clocked out at").get(),"%H:%M:%S")
-            reference_profile.update({"Total time worked":f"{clock_out-clock_in}"})
-        elif lock.confirm_given is False:
-            lock.logs.append("Clock out not logged.")
-        lock.confirm_needed=False
-        lock.confirm_name=None
-        lock.confirm_given=False
+    if lock.confirm_active and lock.confirm_given is None:
+        print('111')
         return
-    reference_profile.update({cur_date:""})
-    reference_profile=db.reference('Attendance/'+name.lower()+'/'+cur_date)
-    reference_profile.update({"Status":"Present",
-        "Clocked in at":datetime.datetime.now().strftime("%H:%M:%S")
-    })
-    lock.logs.append(f"Attendance marked for {name} on {cur_date}")
+    if lock.confirm_active and lock.confirm_given is True:
+        ref = db.reference(f'Attendance/{name.lower()}/{cur_date}')
+        ref.update({
+            "Clocked out at": datetime.datetime.now().strftime("%H:%M:%S")
+        })
+
+        clock_in = datetime.datetime.strptime(
+            db.reference(f'Attendance/{name.lower()}/{cur_date}/Clocked in at').get(),
+            "%H:%M:%S"
+        )
+        clock_out = datetime.datetime.strptime(
+            db.reference(f'Attendance/{name.lower()}/{cur_date}/Clocked out at').get(),
+            "%H:%M:%S"
+        )
+
+        ref.update({"Total time worked": str(clock_out - clock_in)})
+
+        lock.logs.append(f"Clock-out logged for {name}")
+        lock.confirm_given = False
+        lock.confirm_needed = False
+        lock.confirm_name = None
+        lock.confirm_active = False
+        print('10')
+        return
+
+    if lock.confirm_active and lock.confirm_given is False:
+        lock.logs.append("Clock-out cancelled")
+        lock.confirm_given = False
+        lock.confirm_needed = False
+        lock.confirm_name = None
+        lock.confirm_active = False
+        print('11')
+        return
+
     
+    if cur_date in result and not lock.confirm_active:
+        lock.logs.append(
+            f"{name} already marked today. Waiting for clock-out confirmation."
+        )
+        lock.confirm_needed = True
+        lock.confirm_name = name
+        lock.confirm_active = True
+        print('1')
+        return
+
+    if cur_date not in result:
+        reference_profile.update({cur_date: {}})
+        db.reference(f'Attendance/{name.lower()}/{cur_date}').update({
+            "Status": "Present",
+            "Clocked in at": datetime.datetime.now().strftime("%H:%M:%S")
+        })
+        lock.logs.append(f"Attendance marked for {name}")
+        print('2')
+
 def start_detect():
     lock.status='running'
+
     base_directory=os.path.dirname(os.path.abspath(__file__))
     DB_PATH = os.path.join(base_directory, "dataset/")
     MODEL_NAME = "ArcFace"        
@@ -60,6 +81,8 @@ def start_detect():
     cred=credentials.Certificate(key)
     firebase_admin.initialize_app(cred,{'databaseURL':'https://first-project-c1f7b-default-rtdb.asia-southeast1.firebasedatabase.app/'})
     cur_date=datetime.datetime.now().strftime("%d-%m-%Y")
+    if lock.confirm_active and lock.confirm_given is not None:
+        add_attendance(lock.confirm_name)
     cap = cv2.VideoCapture(0)
     cap.set(3, 640)  
     cap.set(4, 480) 
